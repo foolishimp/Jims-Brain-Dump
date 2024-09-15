@@ -9,6 +9,7 @@ interface TopMenuProps {
   onLoad: () => void;
   showEventStack: boolean;
   onToggleEventStack: () => void;
+  onReset: () => void;  // New prop for reset functionality
 }
 
 const TopMenu: React.FC<TopMenuProps> = ({ 
@@ -19,7 +20,8 @@ const TopMenu: React.FC<TopMenuProps> = ({
   onSave, 
   onLoad, 
   showEventStack, 
-  onToggleEventStack 
+  onToggleEventStack,
+  onReset  // New prop
 }) => {
   return (
     <div 
@@ -57,6 +59,21 @@ const TopMenu: React.FC<TopMenuProps> = ({
         }}
       >
         Events
+      </button>
+      <div style={{ width: '1px', height: '20px', backgroundColor: '#ccc', margin: '0 10px' }} />
+      <button 
+        onClick={onReset}
+        style={{
+          backgroundColor: '#ff4136',
+          color: 'white',
+          border: 'none',
+          padding: '5px 10px',
+          borderRadius: '5px',
+          cursor: 'pointer',
+          transition: 'background-color 0.3s'
+        }}
+      >
+        Reset
       </button>
     </div>
   );

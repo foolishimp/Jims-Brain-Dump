@@ -38,7 +38,8 @@ const PostitBoardContent: React.FC = () => {
     canRedo,
     eventLog,
     setPostits,
-    setArrows
+    setArrows,
+    resetBoard  // New function from usePostitBoard
   } = usePostitBoard();
 
   const { screenToCanvasCoordinates } = useCanvas();
@@ -161,6 +162,13 @@ const PostitBoardContent: React.FC = () => {
     return newPostit;
   }, [createPostit, createArrow]);
 
+  const handleReset = useCallback(() => {
+    if (window.confirm('Are you sure you want to reset the board? This action cannot be undone.')) {
+      resetBoard();
+    }
+  }, [resetBoard]);
+
+
   useKeyboardEvent('Delete', deleteSelectedItem, [deleteSelectedItem]);
   useKeyboardEvent('z', handleUndo, [handleUndo], { ctrlKey: true, triggerOnInput: false });
   useKeyboardEvent('y', handleRedo, [handleRedo], { ctrlKey: true, triggerOnInput: false });
@@ -184,6 +192,7 @@ const PostitBoardContent: React.FC = () => {
           onLoad={handleLoad}
           showEventStack={showEventStack}
           onToggleEventStack={toggleEventStack}
+          onReset={handleReset}  // New prop
         />
       </div>
       <InfiniteCanvas 
