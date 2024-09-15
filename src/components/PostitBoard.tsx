@@ -18,7 +18,7 @@ const ZOOM_PARAMS = {
   zoomFactor: 1.1
 };
 
-const PostitBoard: React.FC = () => {
+const PostitBoardContent: React.FC = () => {
   const {
     postits,
     arrows,
@@ -166,66 +166,72 @@ const PostitBoard: React.FC = () => {
   useKeyboardEvent('y', handleRedo, [handleRedo], { ctrlKey: true, triggerOnInput: false });
 
   return (
-    <CanvasProvider>
-      <div ref={boardRef} onClick={handleBoardClick} style={{ width: '100%', height: '100%', position: 'relative' }}>
-        {showEventStack && (
-          <EventStackDisplay 
-            eventLog={eventLog} 
-            topOffset={toolbarHeight} 
-            eventLimit={20} 
-          />
-        )}
-        <div ref={toolbarRef}>
-          <TopMenu
-            canUndo={canUndo}
-            canRedo={canRedo}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            onSave={handleSave}
-            onLoad={handleLoad}
-            showEventStack={showEventStack}
-            onToggleEventStack={toggleEventStack}
-          />
-        </div>
-        <InfiniteCanvas 
-          onDoubleClick={handleDoubleClick}
-          disablePanZoom={!!arrowStart}
-          topOffset={toolbarHeight}
-          zoomParams={ZOOM_PARAMS}
-        >
-          {({ zoom, position }: { zoom: number, position: { x: number, y: number } }) => (
-            <>
-              <ArrowManager
-                ref={arrowManagerRef}
-                postits={postits}
-                arrows={arrows}
-                arrowStart={arrowStart}
-                setArrowStart={setArrowStart}
-                boardRef={boardRef}
-                zoom={zoom}
-                position={position}
-                selectedArrow={selectedArrow}
-                onArrowClick={setSelectedArrow}
-                onCreateArrow={createArrow}
-                onCreatePostitAndArrow={handleCreatePostitAndArrow}
-              />
-              {postits.map((postit) => (
-                <Postit
-                  key={postit.id}
-                  postit={postit}
-                  updatePostit={handleUpdatePostit}
-                  zoom={zoom}
-                  isSelected={selectedPostit === postit.id}
-                  onSelect={handleSelectPostit}
-                  onStartConnection={handleStartConnection}
-                  onPostitClick={handlePostitClick}
-                  isDrawingArrow={!!arrowStart}
-                />
-              ))}
-            </>
-          )}
-        </InfiniteCanvas>
+    <div ref={boardRef} onClick={handleBoardClick} style={{ width: '100%', height: '100%', position: 'relative' }}>
+      {showEventStack && (
+        <EventStackDisplay 
+          eventLog={eventLog} 
+          topOffset={toolbarHeight} 
+          eventLimit={20} 
+        />
+      )}
+      <div ref={toolbarRef}>
+        <TopMenu
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onSave={handleSave}
+          onLoad={handleLoad}
+          showEventStack={showEventStack}
+          onToggleEventStack={toggleEventStack}
+        />
       </div>
+      <InfiniteCanvas 
+        onDoubleClick={handleDoubleClick}
+        disablePanZoom={!!arrowStart}
+        topOffset={toolbarHeight}
+        zoomParams={ZOOM_PARAMS}
+      >
+        {({ zoom, position }: { zoom: number, position: { x: number, y: number } }) => (
+          <>
+            <ArrowManager
+              ref={arrowManagerRef}
+              postits={postits}
+              arrows={arrows}
+              arrowStart={arrowStart}
+              setArrowStart={setArrowStart}
+              boardRef={boardRef}
+              zoom={zoom}
+              position={position}
+              selectedArrow={selectedArrow}
+              onArrowClick={setSelectedArrow}
+              onCreateArrow={createArrow}
+              onCreatePostitAndArrow={handleCreatePostitAndArrow}
+            />
+            {postits.map((postit) => (
+              <Postit
+                key={postit.id}
+                postit={postit}
+                updatePostit={handleUpdatePostit}
+                zoom={zoom}
+                isSelected={selectedPostit === postit.id}
+                onSelect={handleSelectPostit}
+                onStartConnection={handleStartConnection}
+                onPostitClick={handlePostitClick}
+                isDrawingArrow={!!arrowStart}
+              />
+            ))}
+          </>
+        )}
+      </InfiniteCanvas>
+    </div>
+  );
+};
+
+const PostitBoard: React.FC = () => {
+  return (
+    <CanvasProvider>
+      <PostitBoardContent />
     </CanvasProvider>
   );
 };

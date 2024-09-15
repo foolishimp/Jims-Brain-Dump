@@ -103,7 +103,7 @@ const InfiniteCanvas: React.FC<InfiniteCanvasProps> = ({
         touchAction: 'none',
       }}
       onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove as any}
+      onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
       onDoubleClick={handleDoubleClick}
