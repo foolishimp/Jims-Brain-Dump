@@ -19,6 +19,29 @@ const usePostitBoard = () => {
     });
   }, []);
 
+  const createArrow = useCallback((newArrow: Arrow) => {
+    console.log('Creating new arrow:', newArrow);
+    setArrows((prevArrows) => [...prevArrows, newArrow]);
+    handleEvent({
+      target: 'Arrow',
+      action: 'CREATE',
+      data: newArrow,
+    });
+  }, [handleEvent]);
+
+  const createPostit = useCallback((x: number, y: number) => {
+    console.log('usePostitBoard: Creating new postit at:', { x, y });
+    const newPostit = createNewPostit(x, y, '#ffff88');
+    console.log('usePostitBoard: New postit created:', newPostit);
+    setPostits((prevPostits) => [...prevPostits, newPostit]);
+    handleEvent({
+      target: 'Postit',
+      action: 'CREATE',
+      data: newPostit,
+    });
+    return newPostit;
+  }, [handleEvent]);
+
   const updatePostit = useCallback((id: string, updates: Partial<Postit>) => {
     console.log(`updatePostit called with id: ${id}, updates:`, updates);
     
@@ -64,39 +87,9 @@ const usePostitBoard = () => {
             newColor: updates.color,
           },
         });
-      } else if (updates.isEditing !== undefined) {
-        console.log(`Changing edit mode for Postit ${id} to ${updates.isEditing}`);
-        handleEvent({
-          target: 'Postit',
-          action: updates.isEditing ? 'START_EDIT' : 'STOP_EDIT',
-          data: { id },
-        });
       }
 
       return prevPostits.map((p) => (p.id === id ? updatedPostit : p));
-    });
-  }, [handleEvent]);
-
-  const createPostit = useCallback((x: number, y: number) => {
-    console.log('usePostitBoard: Creating new postit at:', { x, y });
-    const newPostit = createNewPostit(x, y, '#ffff88');
-    console.log('usePostitBoard: New postit created:', newPostit);
-    setPostits((prevPostits) => [...prevPostits, newPostit]);
-    handleEvent({
-      target: 'Postit',
-      action: 'CREATE',
-      data: newPostit,
-    });
-    return newPostit;
-  }, [handleEvent]);
-
-  const createArrow = useCallback((newArrow: Arrow) => {
-    console.log('Creating new arrow:', newArrow);
-    setArrows((prevArrows) => [...prevArrows, newArrow]);
-    handleEvent({
-      target: 'Arrow',
-      action: 'CREATE',
-      data: newArrow,
     });
   }, [handleEvent]);
 
@@ -164,7 +157,7 @@ const usePostitBoard = () => {
       data: null,
     });
   }, [handleEvent]);
-  
+
   return {
     postits,
     arrows,

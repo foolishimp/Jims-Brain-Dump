@@ -135,8 +135,13 @@ const PostitBoardContent: React.FC = () => {
     setArrowStart({ id, position });
   }, [setArrowStart]);
 
+  useEffect(() => {
+    console.log('PostitBoard: arrows state updated', arrows);
+  }, [arrows]);
+
   const handlePostitClick = useCallback((event: React.MouseEvent, postitId: string) => {
     if (arrowStart && arrowStart.id !== postitId && arrowManagerRef.current) {
+      console.log('PostitBoard: Attempting to create arrow', { start: arrowStart, end: postitId });
       arrowManagerRef.current.handlePostitClick(event, postitId);
     } else {
       handleSelectPostit(postitId);
