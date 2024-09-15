@@ -1,0 +1,26 @@
+.postitContainer {
+  position: relative;
+}
+
+.postitContent {
+  width: 100%;
+  height: 100%;
+}
+
+.postitTextarea {
+  width: 100%;
+  height: 100%;
+  resize: none;
+}
+
+.connectionPoint {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #0077ff;
+}
+
+.connectionPoint.hovered {
+  transform: scale(1.2);
+}
