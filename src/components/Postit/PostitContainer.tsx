@@ -46,6 +46,8 @@ const PostitContainer: React.FC<PostitContainerProps> = ({
     zoom
   );
 
+  console.log(`PostitContainer: Positioning Postit ${postit.id} at:`, { x: postit.x, y: postit.y });
+
   return (
     <div
       ref={containerRef}
@@ -62,7 +64,7 @@ const PostitContainer: React.FC<PostitContainerProps> = ({
         fontSize: `${zoom >= 1 ? 16 : zoom >= 0.5 ? 14 : zoom >= 0.25 ? 12 : zoom >= 0.1 ? 10 : 8}px`,
         border: isSelected ? '2px solid #0077ff' : 'none',
         pointerEvents: 'auto',
-        zIndex: isSelected || showColorMenu ? 999 : 998, // Adjusted z-index to be below arrows
+        zIndex: isSelected || showColorMenu ? 999 : 998,
         transition: 'box-shadow 0.3s ease, border 0.3s ease',
       }}
       onMouseDown={!isDrawingArrow && !postit.isEditing ? handleMouseDown : undefined}

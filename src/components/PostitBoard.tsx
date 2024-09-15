@@ -119,7 +119,30 @@ const PostitBoard: React.FC = () => {
       const rect = boardRef.current.getBoundingClientRect();
       const x = (event.clientX - rect.left - position.x) / zoom;
       const y = (event.clientY - rect.top - position.y) / zoom;
-      createPostit(x, y);
+
+      console.log('PostitBoard: Double-click debug', {
+        rawClick: { x: event.clientX, y: event.clientY },
+        canvasPosition: position,
+        zoom,
+        calculatedPosition: { x, y }
+      });
+
+      const newPostit = createPostit(x, y);
+      console.log('PostitBoard: New Postit created:', newPostit);
+
+      // Add visual indicator
+      const indicator = document.createElement('div');
+      indicator.style.position = 'absolute';
+      indicator.style.left = `${event.clientX - rect.left}px`;
+      indicator.style.top = `${event.clientY - rect.top}px`;
+      indicator.style.width = '10px';
+      indicator.style.height = '10px';
+      indicator.style.backgroundColor = 'red';
+      indicator.style.borderRadius = '50%';
+      indicator.style.zIndex = '9999';
+      indicator.style.pointerEvents = 'none';
+      boardRef.current.appendChild(indicator);
+      setTimeout(() => boardRef.current?.removeChild(indicator), 2000);
     }
   }, [arrowStart, createPostit]);
 
@@ -212,6 +235,7 @@ const PostitBoard: React.FC = () => {
                 postit={postit}
                 updatePostit={handleUpdatePostit}
                 zoom={zoom}
+                canvasPosition={position}
                 isSelected={selectedPostit === postit.id}
                 onSelect={handleSelectPostit}
                 onStartConnection={handleStartConnection}

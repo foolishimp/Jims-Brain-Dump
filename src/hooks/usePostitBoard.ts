@@ -78,8 +78,9 @@ const usePostitBoard = () => {
   }, [handleEvent]);
 
   const createPostit = useCallback((x: number, y: number) => {
+    console.log('usePostitBoard: Creating new postit at:', { x, y });
     const newPostit = createNewPostit(x, y, '#ffff88');
-    console.log('Creating new postit:', newPostit);
+    console.log('usePostitBoard: New postit created:', newPostit);
     setPostits((prevPostits) => [...prevPostits, newPostit]);
     handleEvent({
       target: 'Postit',
@@ -88,6 +89,7 @@ const usePostitBoard = () => {
     });
     return newPostit;
   }, [handleEvent]);
+
 
   const createArrow = useCallback((newArrow: Arrow) => {
     console.log('Creating new arrow:', newArrow);

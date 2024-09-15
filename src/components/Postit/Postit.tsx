@@ -10,6 +10,7 @@ interface PostitProps {
   postit: PostitType;
   updatePostit: (id: string, updates: Partial<PostitType>) => void;
   zoom: number;
+  canvasPosition: { x: number; y: number };
   isSelected: boolean;
   onSelect: (id: string) => void;
   onStartConnection: (id: string, position: string) => void;
@@ -21,6 +22,7 @@ const Postit: React.FC<PostitProps> = memo(({
   postit,
   updatePostit,
   zoom,
+  canvasPosition,
   isSelected,
   onSelect,
   onStartConnection,
@@ -76,9 +78,14 @@ const Postit: React.FC<PostitProps> = memo(({
     setShowColorMenu(false);
   }, []);
 
+  const transformedX = postit.x * zoom + canvasPosition.x;
+  const transformedY = postit.y * zoom + canvasPosition.y;
+
+  console.log(`Postit ${postit.id}: Rendering at transformed position:`, { x: transformedX, y: transformedY });
+
   return (
     <PostitContainer
-      postit={postit}
+      postit={{...postit, x: transformedX, y: transformedY}}
       updatePostit={handleUpdatePostit}
       zoom={zoom}
       isSelected={isSelected}
