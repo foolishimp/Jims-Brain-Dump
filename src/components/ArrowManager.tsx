@@ -1,6 +1,7 @@
 import React, { useCallback, forwardRef, useState, useEffect } from 'react';
 import Arrow from './Arrow/Arrow';
 import { Postit, Arrow as ArrowType } from '../types';
+import { useCanvas } from '../contexts/CanvasContext';
 
 const POSTIT_WIDTH = 200;
 const POSTIT_HEIGHT = 150;
@@ -38,10 +39,12 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
   onCreatePostitAndArrow
 }, ref) => {
   const [tempArrow, setTempArrow] = useState<{ startX: number; startY: number; endX: number; endY: number } | null>(null);
+  const { canvasToScreenCoordinates, screenToCanvasCoordinates } = useCanvas();
 
   const getIntersectionPoint = useCallback((postit: Postit, targetX: number, targetY: number) => {
-    const centerX = postit.x + POSTIT_WIDTH / 2;
-    const centerY = postit.y + POSTIT_HEIGHT / 2;
+    const { x: screenX, y: screenY } = canvasToScreenCoordinates(postit.x, postit.y);
+    const centerX = screenX + POSTIT_WIDTH / 2;
+    const centerY = screenY + POSTIT_HEIGHT / 2;
     
     const dx = targetX - centerX;
     const dy = targetY - centerY;
@@ -60,7 +63,7 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
       const y = centerY + (dy > 0 ? POSTIT_HEIGHT / 2 : -POSTIT_HEIGHT / 2);
       return { x, y };
     }
-  }, []);
+  }, [canvasToScreenCoordinates]);
 
   const handlePostitClick = useCallback((event: React.MouseEvent, postitId: string) => {
     if (arrowStart && arrowStart.id !== postitId) {
@@ -84,13 +87,11 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
 
   const handleCanvasClick = useCallback((event: React.MouseEvent) => {
     if (arrowStart && boardRef.current) {
-      const rect = boardRef.current.getBoundingClientRect();
-      const x = (event.clientX - rect.left - position.x) / zoom;
-      const y = (event.clientY - rect.top - position.y) / zoom;
+      const { x, y } = screenToCanvasCoordinates(event.clientX, event.clientY);
       
       const clickedPostit = postits.find(postit => 
-        x >= postit.x && x <= postit.x + POSTIT_WIDTH && 
-        y >= postit.y && y <= postit.y + POSTIT_HEIGHT
+        x >= postit.x && x <= postit.x + POSTIT_WIDTH / zoom && 
+        y >= postit.y && y <= postit.y + POSTIT_HEIGHT / zoom
       );
       
       if (clickedPostit) {
@@ -101,16 +102,14 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
         setTempArrow(null);
       }
     }
-  }, [arrowStart, boardRef, zoom, position, postits, handlePostitClick, onCreatePostitAndArrow, setArrowStart]);
+  }, [arrowStart, boardRef, zoom, postits, handlePostitClick, onCreatePostitAndArrow, setArrowStart, screenToCanvasCoordinates]);
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
       if (arrowStart && boardRef.current) {
         const startPostit = postits.find(p => p.id === arrowStart.id);
         if (startPostit) {
-          const rect = boardRef.current.getBoundingClientRect();
-          const endX = (event.clientX - rect.left - position.x) / zoom;
-          const endY = (event.clientY - rect.top - position.y) / zoom;
+          const { x: endX, y: endY } = screenToCanvasCoordinates(event.clientX, event.clientY);
           const startPoint = getIntersectionPoint(startPostit, endX, endY);
           setTempArrow({
             startX: startPoint.x,
@@ -121,17 +120,19 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
         }
       }
     };
-
-    if (boardRef.current) {
-      boardRef.current.addEventListener('mousemove', handleMouseMove);
+  
+    const currentBoardRef = boardRef.current;
+  
+    if (currentBoardRef) {
+      currentBoardRef.addEventListener('mousemove', handleMouseMove);
     }
-
+  
     return () => {
-      if (boardRef.current) {
-        boardRef.current.removeEventListener('mousemove', handleMouseMove);
+      if (currentBoardRef) {
+        currentBoardRef.removeEventListener('mousemove', handleMouseMove);
       }
     };
-  }, [arrowStart, boardRef, zoom, position, postits, getIntersectionPoint]);
+  }, [arrowStart, boardRef, postits, getIntersectionPoint, screenToCanvasCoordinates]);
 
   React.useImperativeHandle(ref, () => ({
     handlePostitClick,

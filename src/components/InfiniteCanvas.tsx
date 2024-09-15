@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import useZoom from '../hooks/useZoom';
+import { useCanvas } from '../contexts/CanvasContext';
 import { ZoomParams } from '../types';
 
 interface InfiniteCanvasProps {
@@ -20,9 +20,13 @@ const InfiniteCanvas: React.FC<InfiniteCanvasProps> = ({
   initialZoom = 1
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { zoom, position, handleZoom, handlePan } = useZoom(initialZoom, { x: 0, y: 0 }, zoomParams);
+  const { zoom, position, setZoom, setPosition, screenToCanvasCoordinates } = useCanvas();
   const [isDragging, setIsDragging] = useState(false);
   const [lastMousePosition, setLastMousePosition] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    setZoom(initialZoom);
+  }, [initialZoom, setZoom]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (disablePanZoom) return;
@@ -32,13 +36,13 @@ const InfiniteCanvas: React.FC<InfiniteCanvasProps> = ({
     }
   }, [disablePanZoom]);
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (disablePanZoom || !isDragging) return;
     const deltaX = e.clientX - lastMousePosition.x;
     const deltaY = e.clientY - lastMousePosition.y;
-    handlePan(deltaX, deltaY);
+    setPosition((prev: { x: number; y: number }) => ({ x: prev.x + deltaX, y: prev.y + deltaY }));
     setLastMousePosition({ x: e.clientX, y: e.clientY });
-  }, [disablePanZoom, isDragging, lastMousePosition, handlePan]);
+  }, [disablePanZoom, isDragging, lastMousePosition, setPosition]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
@@ -53,9 +57,18 @@ const InfiniteCanvas: React.FC<InfiniteCanvasProps> = ({
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
       const delta = e.deltaY < 0 ? 1 : -1;
-      handleZoom(delta, mouseX, mouseY);
+      const newZoom = zoom * (delta > 0 ? zoomParams?.zoomFactor || 1.1 : 1 / (zoomParams?.zoomFactor || 1.1));
+      if (newZoom >= (zoomParams?.minZoom || 0.1) && newZoom <= (zoomParams?.maxZoom || 3)) {
+        const zoomPoint = screenToCanvasCoordinates(mouseX, mouseY);
+        const newPosition = {
+          x: mouseX - zoomPoint.x * newZoom,
+          y: mouseY - zoomPoint.y * newZoom
+        };
+        setZoom(newZoom);
+        setPosition(newPosition);
+      }
     }
-  }, [disablePanZoom, handleZoom]);
+  }, [disablePanZoom, zoom, zoomParams, screenToCanvasCoordinates, setZoom, setPosition]);
 
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
     if (onDoubleClick && containerRef.current) {

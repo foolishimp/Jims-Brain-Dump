@@ -5,12 +5,12 @@ import ConnectionPoints from './ConnectionPoints';
 import ColorMenu from './ColorMenu';
 import { POSTIT_COLORS } from '../../utils/colorUtils';
 import { Postit as PostitType } from '../../types';
+import { useCanvas } from '../../contexts/CanvasContext';
 
 interface PostitProps {
   postit: PostitType;
   updatePostit: (id: string, updates: Partial<PostitType>) => void;
   zoom: number;
-  canvasPosition: { x: number; y: number };
   isSelected: boolean;
   onSelect: (id: string) => void;
   onStartConnection: (id: string, position: string) => void;
@@ -22,7 +22,6 @@ const Postit: React.FC<PostitProps> = memo(({
   postit,
   updatePostit,
   zoom,
-  canvasPosition,
   isSelected,
   onSelect,
   onStartConnection,
@@ -31,6 +30,7 @@ const Postit: React.FC<PostitProps> = memo(({
 }) => {
   const [showColorMenu, setShowColorMenu] = useState(false);
   const colorMenuRef = useRef<HTMLDivElement>(null);
+  const { canvasToScreenCoordinates } = useCanvas();
 
   const handleClick = useCallback((event: React.MouseEvent) => {
     event.stopPropagation();
@@ -78,14 +78,11 @@ const Postit: React.FC<PostitProps> = memo(({
     setShowColorMenu(false);
   }, []);
 
-  const transformedX = postit.x * zoom + canvasPosition.x;
-  const transformedY = postit.y * zoom + canvasPosition.y;
-
-  console.log(`Postit ${postit.id}: Rendering at transformed position:`, { x: transformedX, y: transformedY });
+  const { x, y } = canvasToScreenCoordinates(postit.x, postit.y);
 
   return (
     <PostitContainer
-      postit={{...postit, x: transformedX, y: transformedY}}
+      postit={{...postit, x, y}}
       updatePostit={handleUpdatePostit}
       zoom={zoom}
       isSelected={isSelected}
