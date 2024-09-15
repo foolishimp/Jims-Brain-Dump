@@ -1,5 +1,5 @@
 import React, { useCallback, memo, useState, useRef } from 'react';
-import PostitContainer, { PostitContainerProps } from './PostitContainer';
+import PostitContainer from './PostitContainer';
 import PostitContent from './PostitContent';
 import ConnectionPoints from './ConnectionPoints';
 import ColorMenu from './ColorMenu';
@@ -76,22 +76,19 @@ const Postit: React.FC<PostitProps> = memo(({
     setShowColorMenu(false);
   }, []);
 
-  const containerProps: PostitContainerProps = {
-    postit,
-    updatePostit: handleUpdatePostit,
-    zoom,
-    isSelected,
-    isDrawingArrow,
-    onClick: handleClick,
-    onDoubleClick: handleDoubleClick,
-    onContextMenu: handleContextMenu,
-    showColorMenu,
-    onStopEditing: handleStopEditing,
-    children: null
-  };
-
   return (
-    <PostitContainer {...containerProps}>
+    <PostitContainer
+      postit={postit}
+      updatePostit={handleUpdatePostit}
+      zoom={zoom}
+      isSelected={isSelected}
+      isDrawingArrow={isDrawingArrow}
+      onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
+      onContextMenu={handleContextMenu}
+      showColorMenu={showColorMenu}
+      onStopEditing={handleStopEditing}
+    >
       <PostitContent
         postit={postit}
         updatePostit={handleUpdatePostit}
