@@ -3,31 +3,37 @@ import styles from '../../styles/Postit.module.css';
 
 interface ConnectionPointsProps {
   onStartConnection: (position: string) => void;
-  width: number;
-  height: number;
 }
 
-const ConnectionPoints: React.FC<ConnectionPointsProps> = ({ onStartConnection, width, height }) => {
-  const [hoveredConnector, setHoveredConnector] = useState<number | null>(null);
+const ConnectionPoints: React.FC<ConnectionPointsProps> = ({ onStartConnection }) => {
+  const [hoveredConnector, setHoveredConnector] = useState<string | null>(null);
 
   const connectionPoints = [
-    { x: width / 2, y: 0, position: 'top' },
-    { x: width, y: height / 2, position: 'right' },
-    { x: width / 2, y: height, position: 'bottom' },
-    { x: 0, y: height / 2, position: 'left' },
+    { position: 'top', style: { top: '-10px', left: '50%', transform: 'translateX(-50%)' } },
+    { position: 'right', style: { top: '50%', right: '-10px', transform: 'translateY(-50%)' } },
+    { position: 'bottom', style: { bottom: '-10px', left: '50%', transform: 'translateX(-50%)' } },
+    { position: 'left', style: { top: '50%', left: '-10px', transform: 'translateY(-50%)' } },
   ];
 
   return (
     <>
-      {connectionPoints.map((point, index) => (
+      {connectionPoints.map((point) => (
         <div
-          key={index}
-          className={`${styles.connectionPoint} ${hoveredConnector === index ? styles.hovered : ''}`}
+          key={point.position}
+          className={`${styles.connectionPoint} ${hoveredConnector === point.position ? styles.hovered : ''}`}
           style={{
-            left: `${point.x - 8}px`,
-            top: `${point.y - 8}px`,
+            ...point.style,
+            width: '20px',
+            height: '20px',
+            backgroundColor: '#0077ff',
+            border: '2px solid #ffffff',
+            boxShadow: '0 0 4px rgba(0, 0, 0, 0.3)',
+            position: 'absolute',
+            borderRadius: '50%',
+            cursor: 'pointer',
+            zIndex: 2,
           }}
-          onMouseEnter={() => setHoveredConnector(index)}
+          onMouseEnter={() => setHoveredConnector(point.position)}
           onMouseLeave={() => setHoveredConnector(null)}
           onMouseDown={(e) => {
             e.stopPropagation();

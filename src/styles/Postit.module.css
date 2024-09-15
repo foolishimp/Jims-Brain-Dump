@@ -15,12 +15,12 @@
 
 .connectionPoint {
   position: absolute;
-  width: 10px;
-  height: 10px;
   border-radius: 50%;
-  background-color: #0077ff;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .connectionPoint.hovered {
   transform: scale(1.2);
+  box-shadow: 0 0 8px rgba(0, 119, 255, 0.6);
 }

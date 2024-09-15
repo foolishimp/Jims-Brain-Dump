@@ -87,9 +87,8 @@ const Postit: React.FC<PostitProps> = memo(({
     onContextMenu: handleContextMenu,
     showColorMenu,
     onStopEditing: handleStopEditing,
-    children: null // This will be overwritten by the actual children
+    children: null
   };
-  
 
   return (
     <PostitContainer {...containerProps}>
@@ -101,8 +100,6 @@ const Postit: React.FC<PostitProps> = memo(({
       {isSelected && !isDrawingArrow && !showColorMenu && (
         <ConnectionPoints
           onStartConnection={handleStartConnection}
-          width={200}
-          height={150}
         />
       )}
       {showColorMenu && (
