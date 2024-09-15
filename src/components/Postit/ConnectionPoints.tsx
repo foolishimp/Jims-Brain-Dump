@@ -23,10 +23,10 @@ const ConnectionPoints: React.FC<ConnectionPointsProps> = ({ onStartConnection }
           className={`${styles.connectionPoint} ${hoveredConnector === point.position ? styles.hovered : ''}`}
           style={{
             ...point.style,
-            width: '20px',
-            height: '20px',
-            backgroundColor: '#0077ff',
-            border: '2px solid #ffffff',
+            width: '16px',
+            height: '16px',
+            backgroundColor: 'rgba(0, 119, 255, 0.7)', // Slightly translucent blue
+            border: '2px solid rgba(255, 255, 255, 0.9)',
             boxShadow: '0 0 4px rgba(0, 0, 0, 0.3)',
             position: 'absolute',
             borderRadius: '50%',

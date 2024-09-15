@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 
 interface ArrowProps {
   id?: string;
@@ -25,8 +25,6 @@ const Arrow: React.FC<ArrowProps> = ({
   onClick, 
   isTemporary = false 
 }) => {
-  const [isHovered, setIsHovered] = useState(false);
-
   const dx = endX - startX;
   const dy = endY - startY;
   const angle = Math.atan2(dy, dx) * 180 / Math.PI;
@@ -42,9 +40,6 @@ const Arrow: React.FC<ArrowProps> = ({
       onClick(id);
     }
   }, [onClick, id, isTemporary]);
-
-  const handleMouseEnter = () => !isTemporary && setIsHovered(true);
-  const handleMouseLeave = () => !isTemporary && setIsHovered(false);
 
   return (
     <svg
@@ -72,17 +67,6 @@ const Arrow: React.FC<ArrowProps> = ({
           points={`${length-arrowHeadSize},-${arrowHeadSize/2} ${length},0 ${length-arrowHeadSize},${arrowHeadSize/2}`}
           fill={color}
         />
-        {!isTemporary && isHovered && (
-          <line
-            x1="0"
-            y1="0"
-            x2={length}
-            y2="0"
-            stroke={color}
-            strokeWidth={clickAreaWidth}
-            opacity={0.3}
-          />
-        )}
         {!isTemporary && (
           <line
             x1="0"
@@ -93,8 +77,6 @@ const Arrow: React.FC<ArrowProps> = ({
             strokeWidth={clickAreaWidth}
             style={{ cursor: 'pointer' }}
             onClick={handleClick}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
           />
         )}
       </g>
