@@ -35,6 +35,10 @@ const PostitContent: React.FC<PostitContentProps> = ({ postit, updatePostit, onS
         value={postit.text}
         onChange={handleTextChange}
         onBlur={handleBlur}
+        style={{
+          backgroundColor: 'transparent',
+          color: 'inherit',
+        }}
       />
     );
   }

@@ -1,6 +1,9 @@
-import React, { useState, useCallback, useEffect, useImperativeHandle, forwardRef } from 'react';
+import React, { useCallback, forwardRef, useState, useEffect } from 'react';
 import Arrow from './Arrow/Arrow';
 import { Postit, Arrow as ArrowType } from '../types';
+
+const POSTIT_WIDTH = 200;
+const POSTIT_HEIGHT = 150;
 
 interface ArrowManagerProps {
   postits: Postit[];
@@ -21,6 +24,13 @@ interface ArrowManagerHandle {
   handleCanvasClick: (event: React.MouseEvent) => void;
 }
 
+interface ConnectionPoint {
+  x: number;
+  y: number;
+  position: string;
+  distance?: number;
+}
+
 const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({ 
   postits, 
   arrows, 
@@ -36,28 +46,21 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
 }, ref) => {
   const [tempArrow, setTempArrow] = useState<{ startX: number; startY: number; endX: number; endY: number } | null>(null);
 
-  const getPostitConnectionPoints = useCallback((postit: Postit) => {
-    if (!postit || typeof postit.x !== 'number' || typeof postit.y !== 'number') {
-      console.error('Invalid postit:', postit);
-      return [];
-    }
-    const width = 200;
-    const height = 150;
+  const getPostitConnectionPoints = useCallback((postit: Postit): ConnectionPoint[] => {
     return [
-      { x: postit.x + width / 2, y: postit.y, position: 'top' },
-      { x: postit.x + width, y: postit.y + height / 2, position: 'right' },
-      { x: postit.x + width / 2, y: postit.y + height, position: 'bottom' },
-      { x: postit.x, y: postit.y + height / 2, position: 'left' },
+      { x: postit.x + POSTIT_WIDTH / 2, y: postit.y, position: 'top' },
+      { x: postit.x + POSTIT_WIDTH, y: postit.y + POSTIT_HEIGHT / 2, position: 'right' },
+      { x: postit.x + POSTIT_WIDTH / 2, y: postit.y + POSTIT_HEIGHT, position: 'bottom' },
+      { x: postit.x, y: postit.y + POSTIT_HEIGHT / 2, position: 'left' },
     ];
   }, []);
 
-  const getClosestConnectionPoint = useCallback((postit: Postit, x: number, y: number) => {
+  const getClosestConnectionPoint = useCallback((postit: Postit, targetX: number, targetY: number): ConnectionPoint => {
     const points = getPostitConnectionPoints(postit);
-    if (points.length === 0) return null;
     return points.reduce((closest, point) => {
-      const distance = Math.sqrt(Math.pow(point.x - x, 2) + Math.pow(point.y - y, 2));
-      return distance < closest.distance ? { ...point, distance } : closest;
-    }, { distance: Infinity } as any);
+      const distance = Math.sqrt(Math.pow(point.x - targetX, 2) + Math.pow(point.y - targetY, 2));
+      return distance < (closest.distance ?? Infinity) ? { ...point, distance } : closest;
+    }, { x: 0, y: 0, position: '', distance: Infinity });
   }, [getPostitConnectionPoints]);
 
   const handleMouseMove = useCallback((event: MouseEvent) => {
@@ -65,17 +68,15 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
       const startPostit = postits.find(p => p.id === arrowStart.id);
       if (startPostit) {
         const rect = boardRef.current.getBoundingClientRect();
-        const x = (event.clientX - rect.left - position.x) / zoom;
-        const y = (event.clientY - rect.top - position.y) / zoom;
-        const startPoint = getClosestConnectionPoint(startPostit, x, y);
-        if (startPoint) {
-          setTempArrow({
-            startX: startPoint.x,
-            startY: startPoint.y,
-            endX: x,
-            endY: y,
-          });
-        }
+        const mouseX = (event.clientX - rect.left - position.x) / zoom;
+        const mouseY = (event.clientY - rect.top - position.y) / zoom;
+        const startPoint = getClosestConnectionPoint(startPostit, mouseX, mouseY);
+        setTempArrow({
+          startX: startPoint.x,
+          startY: startPoint.y,
+          endX: mouseX,
+          endY: mouseY,
+        });
       }
     }
   }, [arrowStart, postits, boardRef, zoom, position, getClosestConnectionPoint]);
@@ -99,37 +100,32 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
     }
   }, [boardRef, handleMouseMove, handleKeyDown]);
 
-  const isPointInsidePostit = useCallback((x: number, y: number, postit: Postit) => {
-    return x >= postit.x && x <= postit.x + 200 && y >= postit.y && y <= postit.y + 150;
-  }, []);
-
   const handlePostitClick = useCallback((event: React.MouseEvent, postitId: string) => {
     if (arrowStart && arrowStart.id !== postitId) {
       event.stopPropagation();
       const startPostit = postits.find(p => p.id === arrowStart.id);
       const endPostit = postits.find(p => p.id === postitId);
       if (startPostit && endPostit && boardRef.current) {
-        const rect = boardRef.current.getBoundingClientRect();
-        const x = (event.clientX - rect.left - position.x) / zoom;
-        const y = (event.clientY - rect.top - position.y) / zoom;
-        const startPoint = getClosestConnectionPoint(startPostit, x, y);
-        const endPoint = getClosestConnectionPoint(endPostit, x, y);
-        if (startPoint && endPoint) {
-          const newArrow: ArrowType = {
-            id: Date.now().toString(),
-            startId: arrowStart.id,
-            endId: postitId,
-            startPosition: startPoint.position,
-            endPosition: endPoint.position,
-          };
-          console.log('Creating new arrow:', newArrow);
-          onCreateArrow(newArrow);
-          setArrowStart(null);
-          setTempArrow(null);
-        }
+        const startPoint = getClosestConnectionPoint(startPostit, endPostit.x, endPostit.y);
+        const endPoint = getClosestConnectionPoint(endPostit, startPostit.x, startPostit.y);
+        const newArrow: ArrowType = {
+          id: Date.now().toString(),
+          startId: arrowStart.id,
+          endId: postitId,
+          startPosition: startPoint.position,
+          endPosition: endPoint.position,
+        };
+        console.log('Creating new arrow:', newArrow);
+        onCreateArrow(newArrow);
+        setArrowStart(null);
+        setTempArrow(null);
       }
     }
-  }, [arrowStart, postits, boardRef, zoom, position, getClosestConnectionPoint, onCreateArrow, setArrowStart]);
+  }, [arrowStart, postits, boardRef, getClosestConnectionPoint, onCreateArrow, setArrowStart]);
+
+  const isPointInsidePostit = useCallback((x: number, y: number, postit: Postit) => {
+    return x >= postit.x && x <= postit.x + POSTIT_WIDTH && y >= postit.y && y <= postit.y + POSTIT_HEIGHT;
+  }, []);
 
   const handleCanvasClick = useCallback((event: React.MouseEvent) => {
     if (arrowStart && boardRef.current) {
@@ -150,12 +146,7 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
     }
   }, [arrowStart, boardRef, zoom, position, postits, isPointInsidePostit, handlePostitClick, onCreatePostitAndArrow, setArrowStart]);
 
-  const handleArrowClick = useCallback((arrowId: string) => {
-    console.log('Arrow clicked:', arrowId);
-    onArrowClick(arrowId);
-  }, [onArrowClick]);
-
-  useImperativeHandle(ref, () => ({
+  React.useImperativeHandle(ref, () => ({
     handlePostitClick,
     handleCanvasClick
   }));
@@ -169,31 +160,30 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
         width: '100%', 
         height: '100%', 
         pointerEvents: 'none',
+        zIndex: 1000,
       }}
       onClick={handleCanvasClick}
     >
-      {arrows.map(arrow => {
+      {arrows.map((arrow: ArrowType) => {
         const startPostit = postits.find(p => p.id === arrow.startId);
         const endPostit = postits.find(p => p.id === arrow.endId);
         if (startPostit && endPostit) {
           const startPoint = getClosestConnectionPoint(startPostit, endPostit.x, endPostit.y);
           const endPoint = getClosestConnectionPoint(endPostit, startPostit.x, startPostit.y);
-          if (startPoint && endPoint) {
-            return (
-              <Arrow
-                key={arrow.id}
-                id={arrow.id}
-                startX={startPoint.x}
-                startY={startPoint.y}
-                endX={endPoint.x}
-                endY={endPoint.y}
-                zoom={zoom}
-                isSelected={selectedArrow === arrow.id}
-                onClick={handleArrowClick}
-                isTemporary={false}
-              />
-            );
-          }
+          return (
+            <Arrow
+              key={arrow.id}
+              id={arrow.id}
+              startX={startPoint.x}
+              startY={startPoint.y}
+              endX={endPoint.x}
+              endY={endPoint.y}
+              zoom={zoom}
+              isSelected={selectedArrow === arrow.id}
+              onClick={onArrowClick}
+              isTemporary={false}
+            />
+          );
         }
         return null;
       })}

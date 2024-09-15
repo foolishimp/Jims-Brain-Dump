@@ -1,10 +1,15 @@
 import React, { useCallback, useRef } from 'react';
 import useDraggable from '../../hooks/useDraggable';
-import { Postit } from '../../types';
 
 export interface PostitContainerProps {
-  postit: Postit;
-  updatePostit: (updates: Partial<Postit>) => void;
+  postit: {
+    id: string;
+    x: number;
+    y: number;
+    color?: string;
+    isEditing: boolean;
+  };
+  updatePostit: (updates: Partial<{ x: number; y: number }>) => void;
   zoom: number;
   isSelected: boolean;
   isDrawingArrow: boolean;
@@ -57,7 +62,7 @@ const PostitContainer: React.FC<PostitContainerProps> = ({
         fontSize: `${zoom >= 1 ? 16 : zoom >= 0.5 ? 14 : zoom >= 0.25 ? 12 : zoom >= 0.1 ? 10 : 8}px`,
         border: isSelected ? '2px solid #0077ff' : 'none',
         pointerEvents: 'auto',
-        zIndex: isSelected || showColorMenu ? 1000 : 1,
+        zIndex: isSelected || showColorMenu ? 999 : 998, // Adjusted z-index to be below arrows
         transition: 'box-shadow 0.3s ease, border 0.3s ease',
       }}
       onMouseDown={!isDrawingArrow && !postit.isEditing ? handleMouseDown : undefined}
