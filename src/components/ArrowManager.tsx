@@ -1,4 +1,4 @@
-import React, { useCallback, forwardRef, useState, useEffect } from 'react';
+import React, { useCallback, forwardRef, useState, useEffect, useImperativeHandle } from 'react';
 import Arrow from './Arrow/Arrow';
 import { Postit, Arrow as ArrowType } from '../types';
 import { useCanvas } from '../contexts/CanvasContext';
@@ -11,14 +11,12 @@ interface ArrowManagerProps {
   arrows: ArrowType[];
   arrowStart: { id: string; position: string } | null;
   setArrowStart: React.Dispatch<React.SetStateAction<{ id: string; position: string } | null>>;
-  boardRef: React.RefObject<HTMLDivElement>;
   selectedArrow: string | null;
   onArrowClick: (id: string) => void;
   onCreateArrow: (arrow: ArrowType) => void;
-  onCreatePostitAndArrow: (x: number, y: number, startPostitId: string) => Postit | undefined;
 }
 
-interface ArrowManagerHandle {
+export interface ArrowManagerHandle {
   handlePostitClick: (event: React.MouseEvent, postitId: string) => void;
   handleCanvasClick: (event: React.MouseEvent) => void;
 }
@@ -28,42 +26,26 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
   arrows, 
   arrowStart, 
   setArrowStart, 
-  boardRef, 
   selectedArrow,
   onArrowClick,
   onCreateArrow,
-  onCreatePostitAndArrow
 }, ref) => {
   const [tempArrow, setTempArrow] = useState<{ startX: number; startY: number; endX: number; endY: number } | null>(null);
-  const { canvasToScreenCoordinates, screenToCanvasCoordinates } = useCanvas();
+  const { canvasToScreenCoordinates } = useCanvas();
 
-  const getIntersectionPoint = useCallback((postit: Postit, targetX: number, targetY: number) => {
-    const { x: screenX, y: screenY } = canvasToScreenCoordinates(postit.x, postit.y);
-    const centerX = screenX + POSTIT_WIDTH / 2;
-    const centerY = screenY + POSTIT_HEIGHT / 2;
-    
-    const dx = targetX - centerX;
-    const dy = targetY - centerY;
-    
-    const absDx = Math.abs(dx);
-    const absDy = Math.abs(dy);
-    
-    if (absDx * POSTIT_HEIGHT > absDy * POSTIT_WIDTH) {
-      // Intersects with left or right edge
-      const x = centerX + (dx > 0 ? POSTIT_WIDTH / 2 : -POSTIT_WIDTH / 2);
-      const y = centerY + dy * (POSTIT_WIDTH / 2) / absDx;
-      return { x, y };
-    } else {
-      // Intersects with top or bottom edge
-      const x = centerX + dx * (POSTIT_HEIGHT / 2) / absDy;
-      const y = centerY + (dy > 0 ? POSTIT_HEIGHT / 2 : -POSTIT_HEIGHT / 2);
-      return { x, y };
+  const getConnectionPoint = useCallback((postit: Postit, position: string) => {
+    const { x, y } = canvasToScreenCoordinates(postit.x, postit.y);
+    switch (position) {
+      case 'top': return { x: x + POSTIT_WIDTH / 2, y };
+      case 'right': return { x: x + POSTIT_WIDTH, y: y + POSTIT_HEIGHT / 2 };
+      case 'bottom': return { x: x + POSTIT_WIDTH / 2, y: y + POSTIT_HEIGHT };
+      case 'left': return { x, y: y + POSTIT_HEIGHT / 2 };
+      default: return { x: x + POSTIT_WIDTH / 2, y: y + POSTIT_HEIGHT / 2 };
     }
   }, [canvasToScreenCoordinates]);
 
   const handlePostitClick = useCallback((event: React.MouseEvent, postitId: string) => {
     if (arrowStart && arrowStart.id !== postitId) {
-      event.stopPropagation();
       const startPostit = postits.find(p => p.id === arrowStart.id);
       const endPostit = postits.find(p => p.id === postitId);
       if (startPostit && endPostit) {
@@ -71,8 +53,8 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
           id: Date.now().toString(),
           startId: arrowStart.id,
           endId: postitId,
-          startPosition: 'center',
-          endPosition: 'center',
+          startPosition: arrowStart.position,
+          endPosition: 'left', // Default to left, can be improved
         };
         onCreateArrow(newArrow);
         setArrowStart(null);
@@ -82,80 +64,55 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
   }, [arrowStart, postits, onCreateArrow, setArrowStart]);
 
   const handleCanvasClick = useCallback((event: React.MouseEvent) => {
-    if (arrowStart && boardRef.current) {
-      const { x, y } = screenToCanvasCoordinates(event.clientX, event.clientY);
-      
-      const clickedPostit = postits.find(postit => {
-        const { x: screenX, y: screenY } = canvasToScreenCoordinates(postit.x, postit.y);
-        return (
-          x >= screenX && x <= screenX + POSTIT_WIDTH &&
-          y >= screenY && y <= screenY + POSTIT_HEIGHT
-        );
-      });
-      
-      if (clickedPostit) {
-        handlePostitClick(event, clickedPostit.id);
-      } else {
-        onCreatePostitAndArrow(x, y, arrowStart.id);
-        setArrowStart(null);
-        setTempArrow(null);
-      }
-    }
-  }, [arrowStart, boardRef, postits, handlePostitClick, onCreatePostitAndArrow, setArrowStart, screenToCanvasCoordinates, canvasToScreenCoordinates]);
+    setArrowStart(null);
+    setTempArrow(null);
+  }, [setArrowStart]);
+
+  useImperativeHandle(ref, () => ({
+    handlePostitClick,
+    handleCanvasClick
+  }), [handlePostitClick, handleCanvasClick]);
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
-      if (arrowStart && boardRef.current) {
+      if (arrowStart) {
         const startPostit = postits.find(p => p.id === arrowStart.id);
         if (startPostit) {
-          const { x: endX, y: endY } = screenToCanvasCoordinates(event.clientX, event.clientY);
-          const startPoint = getIntersectionPoint(startPostit, endX, endY);
+          const startPoint = getConnectionPoint(startPostit, arrowStart.position);
           setTempArrow({
             startX: startPoint.x,
             startY: startPoint.y,
-            endX,
-            endY,
+            endX: event.clientX,
+            endY: event.clientY,
           });
         }
       }
     };
-  
-    const currentBoardRef = boardRef.current;
-  
-    if (currentBoardRef) {
-      currentBoardRef.addEventListener('mousemove', handleMouseMove);
-    }
-  
-    return () => {
-      if (currentBoardRef) {
-        currentBoardRef.removeEventListener('mousemove', handleMouseMove);
-      }
-    };
-  }, [arrowStart, boardRef, postits, getIntersectionPoint, screenToCanvasCoordinates]);
 
-  React.useImperativeHandle(ref, () => ({
-    handlePostitClick,
-    handleCanvasClick
-  }));
+    document.addEventListener('mousemove', handleMouseMove);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, [arrowStart, postits, getConnectionPoint]);
 
   return (
-    <div 
-      style={{ 
-        position: 'absolute', 
-        top: 0, 
-        left: 0, 
-        width: '100%', 
-        height: '100%', 
+    <svg
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
         pointerEvents: 'none',
-        zIndex: 999,
+        zIndex: 1000,
       }}
     >
-      {arrows.map((arrow: ArrowType) => {
+      {arrows.map((arrow) => {
         const startPostit = postits.find(p => p.id === arrow.startId);
         const endPostit = postits.find(p => p.id === arrow.endId);
         if (startPostit && endPostit) {
-          const startPoint = getIntersectionPoint(startPostit, endPostit.x + POSTIT_WIDTH / 2, endPostit.y + POSTIT_HEIGHT / 2);
-          const endPoint = getIntersectionPoint(endPostit, startPostit.x + POSTIT_WIDTH / 2, startPostit.y + POSTIT_HEIGHT / 2);
+          const startPoint = getConnectionPoint(startPostit, arrow.startPosition);
+          const endPoint = getConnectionPoint(endPostit, arrow.endPosition);
           return (
             <Arrow
               key={arrow.id}
@@ -166,7 +123,6 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
               endY={endPoint.y}
               isSelected={selectedArrow === arrow.id}
               onClick={onArrowClick}
-              isTemporary={false}
             />
           );
         }
@@ -174,16 +130,15 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
       })}
       {tempArrow && (
         <Arrow
-          key="temp-arrow"
           startX={tempArrow.startX}
           startY={tempArrow.startY}
           endX={tempArrow.endX}
           endY={tempArrow.endY}
           color="#ff0000"
-          isTemporary={true}
+          isTemporary
         />
       )}
-    </div>
+    </svg>
   );
 });
 

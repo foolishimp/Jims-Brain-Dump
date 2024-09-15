@@ -71,7 +71,7 @@ const InfiniteCanvas: React.FC<InfiniteCanvasProps> = ({
       const y = (e.clientY - rect.top - position.y) / zoom;
       onDoubleClick(e, zoom, { x, y });
     }
-  }, [onDoubleClick, zoom, position]);
+  }, [onDoubleClick, zoom, position.x, position.y]);
 
   useEffect(() => {
     const currentContainer = containerRef.current;

@@ -1,7 +1,7 @@
 import React, { useCallback, useRef, useEffect, useState } from 'react';
 import InfiniteCanvas from './InfiniteCanvas';
 import Postit from './Postit/Postit';
-import ArrowManager from './ArrowManager';
+import ArrowManager, { ArrowManagerHandle } from './ArrowManager';
 import EventStackDisplay from './EventStackDisplay';
 import TopMenu from './TopMenu';
 import { useKeyboardEvent } from '../hooks/useKeyboardEvent';
@@ -9,7 +9,7 @@ import usePostitBoard from '../hooks/usePostitBoard';
 import { exportDiagram } from '../utils/exportUtils';
 import { importDiagram } from '../utils/importUtils';
 import { saveToIndexedDB, loadFromBrowser } from '../utils/storageUtils';
-import { Postit as PostitType, Arrow } from '../types';
+import { Postit as PostitType } from '../types';
 import { CanvasProvider, useCanvas } from '../contexts/CanvasContext';
 
 const ZOOM_PARAMS = {
@@ -47,7 +47,7 @@ const PostitBoardContent: React.FC = () => {
   const [showEventStack, setShowEventStack] = useState<boolean>(false);
   const [filename, setFilename] = useState<string>('diagram');
   const boardRef = useRef<HTMLDivElement>(null);
-  const arrowManagerRef = useRef<any>(null);
+  const arrowManagerRef = useRef<ArrowManagerHandle>(null);
   const [toolbarHeight, setToolbarHeight] = useState<number>(0);
   const toolbarRef = useRef<HTMLDivElement>(null);
 
@@ -110,7 +110,7 @@ const PostitBoardContent: React.FC = () => {
   }, []);
 
   const handleBoardClick = useCallback((event: React.MouseEvent) => {
-    if (arrowStart) {
+    if (arrowStart && arrowManagerRef.current) {
       arrowManagerRef.current.handleCanvasClick(event);
     } else {
       setSelectedPostit(null);
@@ -136,7 +136,7 @@ const PostitBoardContent: React.FC = () => {
   }, [setArrowStart]);
 
   const handlePostitClick = useCallback((event: React.MouseEvent, postitId: string) => {
-    if (arrowStart && arrowStart.id !== postitId) {
+    if (arrowStart && arrowStart.id !== postitId && arrowManagerRef.current) {
       arrowManagerRef.current.handlePostitClick(event, postitId);
     } else {
       handleSelectPostit(postitId);
@@ -146,21 +146,6 @@ const PostitBoardContent: React.FC = () => {
   const handleUpdatePostit = useCallback((id: string, updates: Partial<PostitType>) => {
     updatePostit(id, updates);
   }, [updatePostit]);
-
-  const handleCreatePostitAndArrow = useCallback((x: number, y: number, startPostitId: string) => {
-    const newPostit = createPostit(x, y);
-    if (newPostit && startPostitId) {
-      const newArrow: Arrow = {
-        id: Date.now().toString(),
-        startId: startPostitId,
-        endId: newPostit.id,
-        startPosition: 'right',
-        endPosition: 'left',
-      };
-      createArrow(newArrow);
-    }
-    return newPostit;
-  }, [createPostit, createArrow]);
 
   const handleReset = useCallback(() => {
     if (window.confirm('Are you sure you want to reset the board? This action cannot be undone.')) {
@@ -208,11 +193,9 @@ const PostitBoardContent: React.FC = () => {
               arrows={arrows}
               arrowStart={arrowStart}
               setArrowStart={setArrowStart}
-              boardRef={boardRef}
               selectedArrow={selectedArrow}
               onArrowClick={setSelectedArrow}
               onCreateArrow={createArrow}
-              onCreatePostitAndArrow={handleCreatePostitAndArrow}
             />
             {postits.map((postit) => (
               <Postit
