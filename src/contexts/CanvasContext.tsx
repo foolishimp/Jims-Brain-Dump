@@ -1,32 +1,62 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 
-interface CanvasContextType {
+interface CanvasState {
   zoom: number;
   position: { x: number; y: number };
+}
+
+interface CanvasContextType extends CanvasState {
   setZoom: (zoom: number) => void;
   setPosition: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>;
   canvasToScreenCoordinates: (x: number, y: number) => { x: number; y: number };
   screenToCanvasCoordinates: (x: number, y: number) => { x: number; y: number };
+  updateCanvasState: (newState: Partial<CanvasState>) => void;
 }
 
 const CanvasContext = createContext<CanvasContextType | undefined>(undefined);
 
 export const CanvasProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [zoom, setZoom] = useState(1);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-
-  const canvasToScreenCoordinates = (x: number, y: number) => ({
-    x: x * zoom + position.x,
-    y: y * zoom + position.y,
+  const [canvasState, setCanvasState] = useState<CanvasState>({
+    zoom: 1,
+    position: { x: 0, y: 0 },
   });
 
-  const screenToCanvasCoordinates = (x: number, y: number) => ({
-    x: (x - position.x) / zoom,
-    y: (y - position.y) / zoom,
-  });
+  const setZoom = useCallback((newZoom: number) => {
+    setCanvasState((prev) => ({ ...prev, zoom: newZoom }));
+  }, []);
+
+  const setPosition = useCallback((newPosition: { x: number; y: number } | ((prev: { x: number; y: number }) => { x: number; y: number })) => {
+    setCanvasState((prev) => ({
+      ...prev,
+      position: typeof newPosition === 'function' ? newPosition(prev.position) : newPosition,
+    }));
+  }, []);
+
+  const canvasToScreenCoordinates = useCallback((x: number, y: number) => ({
+    x: x * canvasState.zoom + canvasState.position.x,
+    y: y * canvasState.zoom + canvasState.position.y,
+  }), [canvasState]);
+
+  const screenToCanvasCoordinates = useCallback((x: number, y: number) => ({
+    x: (x - canvasState.position.x) / canvasState.zoom,
+    y: (y - canvasState.position.y) / canvasState.zoom,
+  }), [canvasState]);
+
+  const updateCanvasState = useCallback((newState: Partial<CanvasState>) => {
+    setCanvasState((prev) => ({ ...prev, ...newState }));
+  }, []);
 
   return (
-    <CanvasContext.Provider value={{ zoom, position, setZoom, setPosition, canvasToScreenCoordinates, screenToCanvasCoordinates }}>
+    <CanvasContext.Provider
+      value={{
+        ...canvasState,
+        setZoom,
+        setPosition,
+        canvasToScreenCoordinates,
+        screenToCanvasCoordinates,
+        updateCanvasState,
+      }}
+    >
       {children}
     </CanvasContext.Provider>
   );

@@ -10,7 +10,6 @@ import { useCanvas } from '../../contexts/CanvasContext';
 interface PostitProps {
   postit: PostitType;
   updatePostit: (id: string, updates: Partial<PostitType>) => void;
-  zoom: number;
   isSelected: boolean;
   onSelect: (id: string) => void;
   onStartConnection: (id: string, position: string) => void;
@@ -21,7 +20,6 @@ interface PostitProps {
 const Postit: React.FC<PostitProps> = memo(({
   postit,
   updatePostit,
-  zoom,
   isSelected,
   onSelect,
   onStartConnection,
@@ -84,7 +82,6 @@ const Postit: React.FC<PostitProps> = memo(({
     <PostitContainer
       postit={{...postit, x, y}}
       updatePostit={handleUpdatePostit}
-      zoom={zoom}
       isSelected={isSelected}
       isDrawingArrow={isDrawingArrow}
       onClick={handleClick}

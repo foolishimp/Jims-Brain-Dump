@@ -5,7 +5,11 @@ interface DiagramData {
   arrows: Arrow[];
 }
 
-export const importDiagram = async (): Promise<{ filename: string; data: DiagramData }> => {
+type CoordinateConverter = (x: number, y: number) => { x: number; y: number };
+
+export const importDiagram = async (
+  screenToCanvasCoordinates: CoordinateConverter
+): Promise<{ filename: string; data: DiagramData }> => {
   try {
     const [fileHandle] = await window.showOpenFilePicker({
       types: [{
@@ -15,10 +19,20 @@ export const importDiagram = async (): Promise<{ filename: string; data: Diagram
     });
     const file = await fileHandle.getFile();
     const content = await file.text();
-    const diagramData = JSON.parse(content) as DiagramData;
+    const parsedData = JSON.parse(content) as DiagramData;
+
+    // Convert screen coordinates to canvas coordinates
+    const importedPostits = parsedData.postits.map(postit => ({
+      ...postit,
+      ...screenToCanvasCoordinates(postit.x, postit.y)
+    }));
+
     return {
       filename: fileHandle.name.replace('.json', ''),
-      data: diagramData
+      data: {
+        postits: importedPostits,
+        arrows: parsedData.arrows
+      }
     };
   } catch (err) {
     if ((err as Error).name !== 'AbortError') {
@@ -29,12 +43,27 @@ export const importDiagram = async (): Promise<{ filename: string; data: Diagram
   }
 };
 
-export const loadAutoSavedDiagram = (filename: string, index: number): DiagramData | null => {
+export const loadAutoSavedDiagram = (
+  filename: string,
+  index: number,
+  screenToCanvasCoordinates: CoordinateConverter
+): DiagramData | null => {
   const autoSaveFilename = `auto-${filename}-${String(index).padStart(2, '0')}.json`;
   const autoSaveData = localStorage.getItem(autoSaveFilename);
   
   if (autoSaveData) {
-    return JSON.parse(autoSaveData) as DiagramData;
+    const parsedData = JSON.parse(autoSaveData) as DiagramData;
+    
+    // Convert screen coordinates to canvas coordinates
+    const importedPostits = parsedData.postits.map(postit => ({
+      ...postit,
+      ...screenToCanvasCoordinates(postit.x, postit.y)
+    }));
+
+    return {
+      postits: importedPostits,
+      arrows: parsedData.arrows
+    };
   }
   
   return null;

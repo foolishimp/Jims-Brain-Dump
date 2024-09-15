@@ -1,7 +1,14 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Postit, Arrow } from '../types';
 
-export const exportDiagram = async (postits: Postit[], arrows: Arrow[], filename: string): Promise<string> => {
+type CoordinateConverter = (x: number, y: number) => { x: number; y: number };
+
+export const exportDiagram = async (
+  postits: Postit[],
+  arrows: Arrow[],
+  filename: string,
+  canvasToScreenCoordinates: CoordinateConverter
+): Promise<string> => {
   try {
     const handle = await window.showSaveFilePicker({
       suggestedName: `${filename}.json`,
@@ -10,8 +17,14 @@ export const exportDiagram = async (postits: Postit[], arrows: Arrow[], filename
         accept: { 'application/json': ['.json'] },
       }],
     });
+
+    const exportPostits = postits.map(postit => ({
+      ...postit,
+      ...canvasToScreenCoordinates(postit.x, postit.y)
+    }));
+
     const writable = await handle.createWritable();
-    await writable.write(JSON.stringify({ postits, arrows }, null, 2));
+    await writable.write(JSON.stringify({ postits: exportPostits, arrows }, null, 2));
     await writable.close();
     return handle.name.replace('.json', '');
   } catch (err) {
@@ -23,9 +36,21 @@ export const exportDiagram = async (postits: Postit[], arrows: Arrow[], filename
   }
 };
 
-export const autoSaveDiagram = async (postits: Postit[], arrows: Arrow[], filename: string, autoSaveIndex: number): Promise<number> => {
+export const autoSaveDiagram = async (
+  postits: Postit[],
+  arrows: Arrow[],
+  filename: string,
+  autoSaveIndex: number,
+  canvasToScreenCoordinates: CoordinateConverter
+): Promise<number> => {
   const autoSaveFilename = `auto-${filename}-${String(autoSaveIndex).padStart(2, '0')}.json`;
-  const diagramData = JSON.stringify({ postits, arrows }, null, 2);
+  
+  const exportPostits = postits.map(postit => ({
+    ...postit,
+    ...canvasToScreenCoordinates(postit.x, postit.y)
+  }));
+
+  const diagramData = JSON.stringify({ postits: exportPostits, arrows }, null, 2);
 
   try {
     // Always save to downloads for auto-save

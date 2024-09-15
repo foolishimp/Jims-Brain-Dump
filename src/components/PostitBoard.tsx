@@ -39,10 +39,10 @@ const PostitBoardContent: React.FC = () => {
     eventLog,
     setPostits,
     setArrows,
-    resetBoard  // New function from usePostitBoard
+    resetBoard
   } = usePostitBoard();
 
-  const { screenToCanvasCoordinates } = useCanvas();
+  const { screenToCanvasCoordinates, canvasToScreenCoordinates } = useCanvas();
 
   const [showEventStack, setShowEventStack] = useState<boolean>(false);
   const [filename, setFilename] = useState<string>('diagram');
@@ -87,23 +87,23 @@ const PostitBoardContent: React.FC = () => {
 
   const handleSave = useCallback(async () => {
     try {
-      const newFilename = await exportDiagram(postits, arrows, filename);
+      const newFilename = await exportDiagram(postits, arrows, filename, canvasToScreenCoordinates);
       setFilename(newFilename);
     } catch (err) {
       console.error('Failed to save the diagram:', err);
     }
-  }, [postits, arrows, filename]);
+  }, [postits, arrows, filename, canvasToScreenCoordinates]);
 
   const handleLoad = useCallback(async () => {
     try {
-      const { filename: newFilename, data } = await importDiagram();
+      const { filename: newFilename, data } = await importDiagram(screenToCanvasCoordinates);
       setPostits(data.postits);
       setArrows(data.arrows);
       setFilename(newFilename);
     } catch (err) {
       console.error('Failed to load the diagram:', err);
     }
-  }, [setPostits, setArrows]);
+  }, [setPostits, setArrows, screenToCanvasCoordinates]);
 
   const toggleEventStack = useCallback(() => {
     setShowEventStack(prev => !prev);
@@ -118,7 +118,7 @@ const PostitBoardContent: React.FC = () => {
     }
   }, [arrowStart, setSelectedPostit, setSelectedArrow]);
 
-  const handleDoubleClick = useCallback((event: React.MouseEvent, zoom: number, position: { x: number, y: number }) => {
+  const handleDoubleClick = useCallback((event: React.MouseEvent) => {
     if (!arrowStart && boardRef.current) {
       const { x, y } = screenToCanvasCoordinates(event.clientX, event.clientY);
       const newPostit = createPostit(x, y);
@@ -168,7 +168,6 @@ const PostitBoardContent: React.FC = () => {
     }
   }, [resetBoard]);
 
-
   useKeyboardEvent('Delete', deleteSelectedItem, [deleteSelectedItem]);
   useKeyboardEvent('z', handleUndo, [handleUndo], { ctrlKey: true, triggerOnInput: false });
   useKeyboardEvent('y', handleRedo, [handleRedo], { ctrlKey: true, triggerOnInput: false });
@@ -192,7 +191,7 @@ const PostitBoardContent: React.FC = () => {
           onLoad={handleLoad}
           showEventStack={showEventStack}
           onToggleEventStack={toggleEventStack}
-          onReset={handleReset}  // New prop
+          onReset={handleReset}
         />
       </div>
       <InfiniteCanvas 
@@ -201,7 +200,7 @@ const PostitBoardContent: React.FC = () => {
         topOffset={toolbarHeight}
         zoomParams={ZOOM_PARAMS}
       >
-        {({ zoom, position }: { zoom: number, position: { x: number, y: number } }) => (
+        {() => (
           <>
             <ArrowManager
               ref={arrowManagerRef}
@@ -210,8 +209,6 @@ const PostitBoardContent: React.FC = () => {
               arrowStart={arrowStart}
               setArrowStart={setArrowStart}
               boardRef={boardRef}
-              zoom={zoom}
-              position={position}
               selectedArrow={selectedArrow}
               onArrowClick={setSelectedArrow}
               onCreateArrow={createArrow}
@@ -222,7 +219,6 @@ const PostitBoardContent: React.FC = () => {
                 key={postit.id}
                 postit={postit}
                 updatePostit={handleUpdatePostit}
-                zoom={zoom}
                 isSelected={selectedPostit === postit.id}
                 onSelect={handleSelectPostit}
                 onStartConnection={handleStartConnection}

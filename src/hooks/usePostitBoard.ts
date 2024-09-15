@@ -10,6 +10,7 @@ const usePostitBoard = () => {
   const [selectedArrow, setSelectedArrow] = useState<string | null>(null);
   const [arrowStart, setArrowStart] = useState<{ id: string; position: string } | null>(null);
   const [eventLog, setEventLog] = useState<EventLog>(createEventLog());
+
   const handleEvent = useCallback((event: EventLogEntry) => {
     console.log('Handling event:', event);
     setEventLog((prevLog) => {
@@ -89,7 +90,6 @@ const usePostitBoard = () => {
     return newPostit;
   }, [handleEvent]);
 
-
   const createArrow = useCallback((newArrow: Arrow) => {
     console.log('Creating new arrow:', newArrow);
     setArrows((prevArrows) => [...prevArrows, newArrow]);
@@ -163,7 +163,7 @@ const usePostitBoard = () => {
       action: 'RESET',
       data: null,
     });
-  }, []);
+  }, [handleEvent]);
   
   return {
     postits,
@@ -185,7 +185,7 @@ const usePostitBoard = () => {
     eventLog,
     setPostits,
     setArrows,
-    resetBoard  // New function
+    resetBoard
   };
 };
 

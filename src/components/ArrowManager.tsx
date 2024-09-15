@@ -12,8 +12,6 @@ interface ArrowManagerProps {
   arrowStart: { id: string; position: string } | null;
   setArrowStart: React.Dispatch<React.SetStateAction<{ id: string; position: string } | null>>;
   boardRef: React.RefObject<HTMLDivElement>;
-  zoom: number;
-  position: { x: number; y: number };
   selectedArrow: string | null;
   onArrowClick: (id: string) => void;
   onCreateArrow: (arrow: ArrowType) => void;
@@ -31,8 +29,6 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
   arrowStart, 
   setArrowStart, 
   boardRef, 
-  zoom, 
-  position, 
   selectedArrow,
   onArrowClick,
   onCreateArrow,
@@ -89,10 +85,13 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
     if (arrowStart && boardRef.current) {
       const { x, y } = screenToCanvasCoordinates(event.clientX, event.clientY);
       
-      const clickedPostit = postits.find(postit => 
-        x >= postit.x && x <= postit.x + POSTIT_WIDTH / zoom && 
-        y >= postit.y && y <= postit.y + POSTIT_HEIGHT / zoom
-      );
+      const clickedPostit = postits.find(postit => {
+        const { x: screenX, y: screenY } = canvasToScreenCoordinates(postit.x, postit.y);
+        return (
+          x >= screenX && x <= screenX + POSTIT_WIDTH &&
+          y >= screenY && y <= screenY + POSTIT_HEIGHT
+        );
+      });
       
       if (clickedPostit) {
         handlePostitClick(event, clickedPostit.id);
@@ -102,7 +101,7 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
         setTempArrow(null);
       }
     }
-  }, [arrowStart, boardRef, zoom, postits, handlePostitClick, onCreatePostitAndArrow, setArrowStart, screenToCanvasCoordinates]);
+  }, [arrowStart, boardRef, postits, handlePostitClick, onCreatePostitAndArrow, setArrowStart, screenToCanvasCoordinates, canvasToScreenCoordinates]);
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
@@ -150,7 +149,6 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
         pointerEvents: 'none',
         zIndex: 999,
       }}
-      onClick={handleCanvasClick}
     >
       {arrows.map((arrow: ArrowType) => {
         const startPostit = postits.find(p => p.id === arrow.startId);
@@ -166,7 +164,6 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
               startY={startPoint.y}
               endX={endPoint.x}
               endY={endPoint.y}
-              zoom={zoom}
               isSelected={selectedArrow === arrow.id}
               onClick={onArrowClick}
               isTemporary={false}
@@ -182,7 +179,6 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
           startY={tempArrow.startY}
           endX={tempArrow.endX}
           endY={tempArrow.endY}
-          zoom={zoom}
           color="#ff0000"
           isTemporary={true}
         />

@@ -8,25 +8,19 @@ interface InfiniteCanvasProps {
   disablePanZoom?: boolean;
   zoomParams?: ZoomParams;
   topOffset?: number;
-  initialZoom?: number;
 }
 
 const InfiniteCanvas: React.FC<InfiniteCanvasProps> = ({
   children,
   onDoubleClick,
   disablePanZoom,
-  zoomParams,
+  zoomParams = { minZoom: 0.1, maxZoom: 3, zoomFactor: 1.1 },
   topOffset = 0,
-  initialZoom = 1
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { zoom, position, setZoom, setPosition, screenToCanvasCoordinates } = useCanvas();
   const [isDragging, setIsDragging] = useState(false);
   const [lastMousePosition, setLastMousePosition] = useState({ x: 0, y: 0 });
-
-  useEffect(() => {
-    setZoom(initialZoom);
-  }, [initialZoom, setZoom]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (disablePanZoom) return;
@@ -40,7 +34,7 @@ const InfiniteCanvas: React.FC<InfiniteCanvasProps> = ({
     if (disablePanZoom || !isDragging) return;
     const deltaX = e.clientX - lastMousePosition.x;
     const deltaY = e.clientY - lastMousePosition.y;
-    setPosition((prev: { x: number; y: number }) => ({ x: prev.x + deltaX, y: prev.y + deltaY }));
+    setPosition((prev) => ({ x: prev.x + deltaX, y: prev.y + deltaY }));
     setLastMousePosition({ x: e.clientX, y: e.clientY });
   }, [disablePanZoom, isDragging, lastMousePosition, setPosition]);
 
@@ -57,8 +51,8 @@ const InfiniteCanvas: React.FC<InfiniteCanvasProps> = ({
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
       const delta = e.deltaY < 0 ? 1 : -1;
-      const newZoom = zoom * (delta > 0 ? zoomParams?.zoomFactor || 1.1 : 1 / (zoomParams?.zoomFactor || 1.1));
-      if (newZoom >= (zoomParams?.minZoom || 0.1) && newZoom <= (zoomParams?.maxZoom || 3)) {
+      const newZoom = zoom * (delta > 0 ? zoomParams.zoomFactor : 1 / zoomParams.zoomFactor);
+      if (newZoom >= zoomParams.minZoom && newZoom <= zoomParams.maxZoom) {
         const zoomPoint = screenToCanvasCoordinates(mouseX, mouseY);
         const newPosition = {
           x: mouseX - zoomPoint.x * newZoom,
