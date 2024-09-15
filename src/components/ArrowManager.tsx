@@ -1,4 +1,4 @@
-import React, { useCallback, forwardRef, useState } from 'react';
+import React, { useCallback, forwardRef, useState, useEffect } from 'react';
 import Arrow from './Arrow/Arrow';
 import { Postit, Arrow as ArrowType } from '../types';
 
@@ -102,6 +102,36 @@ const ArrowManager = forwardRef<ArrowManagerHandle, ArrowManagerProps>(({
       }
     }
   }, [arrowStart, boardRef, zoom, position, postits, handlePostitClick, onCreatePostitAndArrow, setArrowStart]);
+
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent) => {
+      if (arrowStart && boardRef.current) {
+        const startPostit = postits.find(p => p.id === arrowStart.id);
+        if (startPostit) {
+          const rect = boardRef.current.getBoundingClientRect();
+          const endX = (event.clientX - rect.left - position.x) / zoom;
+          const endY = (event.clientY - rect.top - position.y) / zoom;
+          const startPoint = getIntersectionPoint(startPostit, endX, endY);
+          setTempArrow({
+            startX: startPoint.x,
+            startY: startPoint.y,
+            endX,
+            endY,
+          });
+        }
+      }
+    };
+
+    if (boardRef.current) {
+      boardRef.current.addEventListener('mousemove', handleMouseMove);
+    }
+
+    return () => {
+      if (boardRef.current) {
+        boardRef.current.removeEventListener('mousemove', handleMouseMove);
+      }
+    };
+  }, [arrowStart, boardRef, zoom, position, postits, getIntersectionPoint]);
 
   React.useImperativeHandle(ref, () => ({
     handlePostitClick,
