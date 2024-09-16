@@ -2,6 +2,8 @@ import { Postit } from '../types';
 
 export const POSTIT_WIDTH = 200;
 export const POSTIT_HEIGHT = 150;
+export const POSTIT_PADDING = 10;
+export const POSTIT_BORDER = 2;
 
 export const generateId = (): string => {
   return Math.random().toString(36).substr(2, 9);
@@ -36,15 +38,19 @@ export const getPostitConnectionPoints = (postit: Postit): ConnectionPoint[] => 
     console.error('Invalid postit:', postit);
     return [];
   }
+  
+  const totalWidth = POSTIT_WIDTH + 2 * (POSTIT_PADDING + POSTIT_BORDER);
+  const totalHeight = POSTIT_HEIGHT + 2 * (POSTIT_PADDING + POSTIT_BORDER);
+  
   return [
-    { x: postit.x + POSTIT_WIDTH / 2, y: postit.y, position: 'top' },
-    { x: postit.x + POSTIT_WIDTH, y: postit.y + POSTIT_HEIGHT / 2, position: 'right' },
-    { x: postit.x + POSTIT_WIDTH / 2, y: postit.y + POSTIT_HEIGHT, position: 'bottom' },
-    { x: postit.x, y: postit.y + POSTIT_HEIGHT / 2, position: 'left' },
+    { x: postit.x + totalWidth / 2, y: postit.y, position: 'top' },
+    { x: postit.x + totalWidth, y: postit.y + totalHeight / 2, position: 'right' },
+    { x: postit.x + totalWidth / 2, y: postit.y + totalHeight, position: 'bottom' },
+    { x: postit.x, y: postit.y + totalHeight / 2, position: 'left' },
   ];
 };
 
-interface ConnectionPointWithDistance extends ConnectionPoint {
+export interface ConnectionPointWithDistance extends ConnectionPoint {
   distance: number;
 }
 
