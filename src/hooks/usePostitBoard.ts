@@ -79,7 +79,11 @@ const usePostitBoard = () => {
 
   const createPostit = useCallback((x: number, y: number) => {
     const newPostit = createNewPostit(x, y, '#ffff88');
-    console.log('Creating new postit:', newPostit);
+    console.log('Creating new postit:', {
+      ...newPostit,
+      canvasX: x,
+      canvasY: y
+    });
     setPostits((prevPostits) => [...prevPostits, newPostit]);
     handleEvent({
       target: 'Postit',

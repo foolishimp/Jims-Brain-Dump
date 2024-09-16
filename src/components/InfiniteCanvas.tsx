@@ -56,12 +56,27 @@ const InfiniteCanvas: React.FC<InfiniteCanvasProps> = ({
       handleZoom(delta, mouseX, mouseY);
     }
   }, [disablePanZoom, handleZoom]);
-
+/*
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (onDoubleClick && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const x = (e.clientX - rect.left - position.x) / zoom;
       const y = (e.clientY - rect.top - position.y) / zoom;
+      onDoubleClick(e, zoom, { x, y });
+    }
+  }, [onDoubleClick, zoom, position]);
+*/
+  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (onDoubleClick && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / zoom - position.x / zoom;
+      const y = (e.clientY - rect.top) / zoom - position.y / zoom;
       onDoubleClick(e, zoom, { x, y });
     }
   }, [onDoubleClick, zoom, position]);
@@ -88,6 +103,7 @@ const InfiniteCanvas: React.FC<InfiniteCanvasProps> = ({
         overflow: 'hidden',
         cursor: disablePanZoom ? 'default' : (isDragging ? 'grabbing' : 'grab'),
         touchAction: 'none',
+        userSelect: 'none',  // Prevent text selection
       }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove as any}

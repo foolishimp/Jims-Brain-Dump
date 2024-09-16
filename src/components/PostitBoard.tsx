@@ -116,10 +116,9 @@ const PostitBoard: React.FC = () => {
 
   const handleDoubleClick = useCallback((event: React.MouseEvent, zoom: number, position: { x: number, y: number }) => {
     if (!arrowStart && boardRef.current) {
-      const rect = boardRef.current.getBoundingClientRect();
-      const x = (event.clientX - rect.left - position.x) / zoom;
-      const y = (event.clientY - rect.top - position.y) / zoom;
-      createPostit(x, y);
+      // The x and y here should already be in the correct canvas coordinate system
+      // We don't need to do any further transformation
+      createPostit(position.x, position.y);
     }
   }, [arrowStart, createPostit]);
 
